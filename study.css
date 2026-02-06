@@ -1,0 +1,265 @@
+/* ---------------- GLOBAL ---------------- */
+body {
+  min-height: 100vh;
+  background-color:#fafbfb;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: var(--text-dark);
+    background: linear-gradient(270deg, #F4F2E0, #f8dbf4, #97c1ef, #E1EDF4);
+  background-size: 180% 180%;
+  animation: gradient-animation 18s ease infinite;
+  margin: 0%;
+}
+
+
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+
+/* navbar color */
+.breadcrumb-bar {
+  width: 100%;
+  background: linear-gradient(135deg,#f8dbf4, #97c1ef,#f8dbf4 );
+  padding: 14px 24px;
+}
+
+/* NAV LINKS */
+.nav-link {
+  color: #1d1d1f;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  color: #0071e3;
+}
+
+/* PROFILE AREA */
+.profile-area {
+  cursor: pointer;
+}
+
+.profile-text {
+  font-size: 1rem;
+  color: #1a1a1a;
+}
+
+/* SVG ICON */
+.profile-icon {
+  color: #151516;
+}
+
+/* Optional hover effect */
+.profile-area:hover .profile-icon {
+  transform: scale(1.05);
+  transition: 0.2s ease;
+}
+
+
+
+/* =========================
+   GENERATED NOTE THUMBNAIL
+   ========================= */
+
+.note-thumb {
+  height: 225px;
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(
+    135deg,
+    #e8ecff,
+    #fbe7f3,
+    #fff7e6
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+}
+
+.note-thumb h6 {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1d1d1f;
+  word-break: break-word;
+}
+
+.note-type {
+  font-size: 0.8rem;
+  color: #6e6e73;
+  margin-top: 0.25rem;
+}
+
+/* avatar */
+/* INITIAL AVATAR */
+.profile-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  color: #1d1d1f;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* dropdown */
+
+
+/* PROFILE WRAPPER */
+.profile-wrapper {
+  cursor: pointer;
+}
+
+/* DROPDOWN */
+.profile-dropdown {
+  position: absolute;
+  right: 0;
+  top: 120%;
+  width: 160px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  padding: 0.5rem 0;
+  display: none;
+  z-index: 1000;
+}
+
+/* Dropdown links */
+.profile-dropdown a {
+  display: block;
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  color: #1d1d1f;
+  text-decoration: none;
+}
+
+.profile-dropdown a:hover {
+  background-color: #f5f7fb;
+}
+
+/* Show dropdown */
+.profile-dropdown.show {
+  display: block;
+}
+
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background: #A07561;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+canvas {
+  border: 1px solid #ccc;
+  margin-top: 20px;
+}
+
+#drawCanvas {
+  touch-action: none; /* CRITICAL for touch drawing */
+  background-color: #ede7e7;
+}
+
+.toolbar button {
+  background: #c9b2ab;
+  border: none;
+  color: white;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.toolbar button.active {
+  background: #4f7cff;
+}
+
+/* hidden color box */
+
+.colors {
+  display: flex;
+  gap: 6px;
+  margin-left: 10px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.colors.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+}
+
+
+/* pop */
+.toolbar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* palette dropdown */
+.palette {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 10px;
+
+  display: none;
+  gap: 8px;
+  padding: 10px 12px;
+
+  background: #1f2230;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+
+  transform: translateY(-10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* visible state */
+.palette.show {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+  display: flex;
+}
+
+/* colors */
+.color {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+}
+
+
+/* Real translucent highlighter effect */
+.web-highlighter-highlight {
+  background-color: rgba(255, 235, 59, 0.45); /* yellow */
+  padding: 2px 4px;
+  border-radius: 6px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+
+
+
+
