@@ -181,13 +181,27 @@ canvas {
 
 #drawCanvas {
   background-color: #ede7e7;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
 }
 
 #highlightCanvas {
   position: absolute;
   top: 0;
   left: 0;
-  cursor: highlighter;
+  z-index: 2;
+  pointer-events: none; /* allow inputCanvas to receive events */
+}
+
+#inputCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: crosshair;
+  background: transparent;
+  z-index: 100;
 }
 
 .toolbar button {
