@@ -18,7 +18,7 @@
 
       <!-- LEFT: Breadcrumbs / Navigation -->
       <nav class="d-flex gap-4">
-        <a href="dashbStd.html" class="nav-link px-0">Dashboard</a>
+        <a href="#" id="dashboardLink" class="nav-link px-0">Dashboard</a>
         <a href="home.html" class="nav-link px-0">Home</a>
         <!-- <a href="#" class="nav-link px-0">Your Uploads</a> -->
       </nav>
@@ -70,9 +70,10 @@ data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false
     <button id="highlightBtn">🖍️</button>
     <button id="textBtn">📝</button>
     <button id="clearBtn">🗑️</button>
-<button id="eraserBtn">🧽</button>
-<button id="undoBtn">↩️</button>
-<button id="redoBtn">↪️</button>
+    <button id="eraserBtn">🧽</button>
+    <button id="undoBtn">↩️</button>
+    <button id="redoBtn">↪️</button>
+    <button id="saveBtn">💾</button>
 
   </div>
 
@@ -88,14 +89,27 @@ data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false
 </div>
 
 
-<!-- Canvas -->
-<canvas id="drawCanvas"></canvas>
+<!-- Canvas Container -->
+<div id="canvasContainer">
+  <canvas id="drawCanvas"></canvas>
+  <canvas id="highlightCanvas"></canvas>
+</div>
 
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 
 <script src="https://unpkg.com/web-highlighter/dist/web-highlighter.min.js"></script>
+
+<script>
+// Set dashboard link based on user role
+document.addEventListener("DOMContentLoaded", () => {
+  const dashboardLink = document.getElementById("dashboardLink");
+  const userRole = localStorage.getItem("userRole") || "learner";
+  dashboardLink.href = userRole === "admin" ? "dashboard.html" : "dashbStd.html";
+});
+</script>
+
 <script src="home.js"></script>
 
 </body>

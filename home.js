@@ -55,12 +55,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* CANVAS SETUP */
 
+  const container = document.getElementById("canvasContainer");
   const canvas = document.getElementById("drawCanvas");
-  if (!canvas) return;
+  const highlightCanvas = document.getElementById("highlightCanvas");
+  if (!canvas || !highlightCanvas) return;
 
   const ctx = canvas.getContext("2d");
+  const highlightCtx = highlightCanvas.getContext("2d");
+  
   canvas.width = window.innerWidth * 0.9;
   canvas.height = window.innerHeight * 0.7;
+  highlightCanvas.width = canvas.width;
+  highlightCanvas.height = canvas.height;
+
+  // Get current space name and student email for canvas persistence
+  const currentSpaceName = sessionStorage.getItem("currentSpace") || "default";
+  const studentEmail = localStorage.getItem("userEmail") || "guest@example.com";
+
+  // Load canvas from database
+  async function loadCanvas() {
+    try {
+      const response = await fetch(`/api/canvas/load/${encodeURIComponent(currentSpaceName)}/${encodeURIComponent(studentEmail)}`);
+      const data = await response.json();
+      
+      if (data.imageData) {
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = data.imageData;
+      }
+    } catch (err) {
+      console.error("Failed to load canvas:", err);
+    }
+  }
+
+  // Load canvas on page load
+  loadCanvas();
 
   let drawing = false;
   let color = "#000";
@@ -71,56 +102,96 @@ document.addEventListener("DOMContentLoaded", () => {
   let redoStack = [];
 
   function saveState() {
-    history.push(canvas.toDataURL());
+    // Save both canvases as a composite
+    history.push({
+      main: canvas.toDataURL(),
+      highlight: highlightCanvas.toDataURL()
+    });
     if (history.length > 30) history.shift();
     redoStack = [];
+  }
+
+  // Canvas save to database
+  async function saveCanvasToDatabase() {
+    try {
+      const imageData = canvas.toDataURL("image/png");
+      const response = await fetch("/api/canvas/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          spaceName: currentSpaceName,
+          studentEmail: studentEmail,
+          imageData: imageData
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert("Canvas saved successfully!");
+      } else {
+        alert("Failed to save canvas");
+      }
+    } catch (err) {
+      alert("Error saving canvas: " + err.message);
+    }
   }
 
 canvas.addEventListener("pointerdown", startDraw);
 canvas.addEventListener("pointermove", draw);
 canvas.addEventListener("pointerup", stopDraw);
 canvas.addEventListener("pointerleave", stopDraw);
+highlightCanvas.addEventListener("pointerdown", startDraw);
+highlightCanvas.addEventListener("pointermove", draw);
+highlightCanvas.addEventListener("pointerup", stopDraw);
+highlightCanvas.addEventListener("pointerleave", stopDraw);
 
 
 function startDraw(e) {
   drawing = true;
   saveState();
 
-  ctx.beginPath();
-  ctx.moveTo(e.offsetX, e.offsetY);
+  const currentCtx = tool === "highlight" ? highlightCtx : ctx;
+  currentCtx.beginPath();
+  currentCtx.moveTo(e.offsetX, e.offsetY);
 }
 
 function draw(e) {
   if (!drawing) return;
 
-  ctx.strokeStyle = color;
-  ctx.lineWidth = lineWidth;
+  const currentCtx = tool === "highlight" ? highlightCtx : ctx;
+  currentCtx.strokeStyle = color;
+  currentCtx.lineWidth = lineWidth;
 
   // Highlighter-specific behavior
   if (tool === "highlight") {
-    ctx.globalAlpha = 0.2;       // lighter
-    ctx.lineCap = "round";      // real highlighter edge
+    currentCtx.globalAlpha = 0.15;       // translucent
+    currentCtx.lineCap = "round";
   } else {
-    ctx.globalAlpha = 1;
-    ctx.lineCap = "round";
+    currentCtx.globalAlpha = 1;
+    currentCtx.lineCap = "round";
   }
 
-  ctx.lineJoin = "round";
+  currentCtx.lineJoin = "round";
 
-  ctx.lineTo(e.offsetX, e.offsetY);
-  ctx.stroke();
+  currentCtx.lineTo(e.offsetX, e.offsetY);
+  currentCtx.stroke();
 }
 
 
 function stopDraw() {
   drawing = false;
-  ctx.beginPath(); // reset path ONCE at the end
+  const currentCtx = tool === "highlight" ? highlightCtx : ctx;
+  currentCtx.beginPath(); // reset path ONCE at the end
 }
 
 
 //switching tools
 ctx.globalCompositeOperation = "source-over";
 ctx.globalAlpha = 1;
+highlightCtx.globalCompositeOperation = "source-over";
+highlightCtx.globalAlpha = 0.15;
 
 
   
@@ -148,31 +219,31 @@ function setActiveTool(t) {
 
   palette.classList.remove("show");
 
-  // Reset canvas state
+  // Reset both canvas states
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = "source-over";
+  ctx.globalAlpha = 1;
+  highlightCtx.setTransform(1, 0, 0, 1, 0, 0);
+  highlightCtx.globalCompositeOperation = "source-over";
+  highlightCtx.globalAlpha = 0.15;
 
   if (t === "pen") {
     penBtn.classList.add("active");
     palette.classList.add("show");
-
     lineWidth = 3;
     ctx.globalAlpha = 1;
     ctx.lineCap = "round";
   }
 
-if (t === "highlight") {
-  highlightBtn.classList.add("active");
-  palette.classList.add("show");
-
-  lineWidth = 18;
-
-  ctx.globalAlpha = 0.15;                 // transparency
-  ctx.globalCompositeOperation = "source-over"; //IMPORTANT
-  ctx.lineCap = "butt";                  // flat highlighter edge
-  ctx.lineJoin = "round";
-}
-
+  if (t === "highlight") {
+    highlightBtn.classList.add("active");
+    palette.classList.add("show");
+    lineWidth = 18;
+    highlightCtx.globalAlpha = 0.15;
+    highlightCtx.globalCompositeOperation = "source-over";
+    highlightCtx.lineCap = "round";
+    highlightCtx.lineJoin = "round";
+  }
 
   if (t === "eraser") {
     eraserBtn.classList.add("active");
@@ -205,41 +276,83 @@ ctx.globalCompositeOperation = "source-over";
   eraserBtn?.addEventListener("click", e => { e.stopPropagation(); setActiveTool("eraser"); });
   textBtn?.addEventListener("click", e => { e.stopPropagation(); setActiveTool("text"); });
 
+// Save to database button
+const saveBtn = document.getElementById("saveBtn");
+saveBtn?.addEventListener("click", () => {
+  saveCanvasToDatabase();
+});
+
 //undo
 undoBtn.addEventListener("click", () => {
   if (!history.length) return;
 
-  redoStack.push(canvas.toDataURL());
-
-  const img = new Image();
-  img.src = history.pop();
-  img.onload = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // // RESET canvas state BEFORE drawing
-    // ctx.globalAlpha = 1;
-    // ctx.globalCompositeOperation = "source-over";
-
-    ctx.drawImage(img, 0, 0);
+  const currentState = {
+    main: canvas.toDataURL(),
+    highlight: highlightCanvas.toDataURL()
   };
+  redoStack.push(currentState);
+
+  const previousState = history.pop();
+  
+  const mainImg = new Image();
+  const highlightImg = new Image();
+  let imagesLoaded = 0;
+  
+  mainImg.onload = () => {
+    imagesLoaded++;
+    if (imagesLoaded === 2) applyState();
+  };
+  
+  highlightImg.onload = () => {
+    imagesLoaded++;
+    if (imagesLoaded === 2) applyState();
+  };
+  
+  function applyState() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+    ctx.drawImage(mainImg, 0, 0);
+    highlightCtx.drawImage(highlightImg, 0, 0);
+  }
+  
+  mainImg.src = previousState.main;
+  highlightImg.src = previousState.highlight;
 });
 
 //redo
 redoBtn.addEventListener("click", () => {
   if (!redoStack.length) return;
 
-  history.push(canvas.toDataURL());
+  history.push({
+    main: canvas.toDataURL(),
+    highlight: highlightCanvas.toDataURL()
+  });
 
-  const img = new Image();
-  img.src = redoStack.pop();
-  img.onload = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = "source-over";
-
-    ctx.drawImage(img, 0, 0);
+  const nextState = redoStack.pop();
+  
+  const mainImg = new Image();
+  const highlightImg = new Image();
+  let imagesLoaded = 0;
+  
+  mainImg.onload = () => {
+    imagesLoaded++;
+    if (imagesLoaded === 2) applyState();
   };
+  
+  highlightImg.onload = () => {
+    imagesLoaded++;
+    if (imagesLoaded === 2) applyState();
+  };
+  
+  function applyState() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+    ctx.drawImage(mainImg, 0, 0);
+    highlightCtx.drawImage(highlightImg, 0, 0);
+  }
+  
+  mainImg.src = nextState.main;
+  highlightImg.src = nextState.highlight;
 });
 
 
@@ -258,6 +371,15 @@ canvas.addEventListener("click", e => {
   ctx.font = "16px Segoe UI";
 
   ctx.fillText(text, e.offsetX, e.offsetY);
+});
+
+// Clear canvas button
+const clearBtn = document.getElementById("clearBtn");
+clearBtn?.addEventListener("click", () => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+  history = [];
+  redoStack = [];
 });
 
 

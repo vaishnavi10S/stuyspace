@@ -3,7 +3,7 @@ const emailInput = document.getElementById("floatingInput");
 const passwordInput = document.getElementById("floatingPassword");
 // Handle form submission
 
-form.addEventListener("submit", function (e) {
+form?.addEventListener("submit", function (e) {
   e.preventDefault();
 // Validation flag
   let isValid = true;
@@ -25,8 +25,25 @@ form.addEventListener("submit", function (e) {
   }
 
   if (isValid) {
-    alert("Login successful (demo)");
-    form.reset();
+    // Store user info in localStorage
+    localStorage.setItem("userEmail", emailInput.value);
+    localStorage.setItem("isLoggedIn", "true");
+    
+    // Redirect based on page and role
+    const userRole = localStorage.getItem("userRole") || "learner";
+    const currentPage = window.location.pathname.split("/").pop();
+    
+    if (currentPage.includes("signup")) {
+      // Redirect from signup to appropriate dashboard
+      if (userRole === "admin") {
+        window.location.href = "./dashboard.html";
+      } else {
+        window.location.href = "./dashbStd.html";
+      }
+    } else if (currentPage.includes("login")) {
+      // Redirect from login to home (determine role from stored value)
+      window.location.href = "./home.html";
+    }
   }
 });
 
@@ -84,4 +101,10 @@ avatar.style.backgroundColor = colors[colorIndex];
 // Admin badge logic
 if (localStorage.getItem("userRole") === "admin") {
   adminBadge.classList.remove("d-none");
+}
+
+// Role selection function
+function selectRole(role) {
+  localStorage.setItem("userRole", role);
+  window.location.href = "./signup.html";
 }

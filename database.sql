@@ -158,6 +158,17 @@ VALUES (
   'uploads/unit_1_pandas_lib.docx'
 );
 
+-- Canvas Drawings Table
+
+CREATE TABLE canvas_drawings (
+    drawing_id INT AUTO_INCREMENT PRIMARY KEY,
+    space_name VARCHAR(200) NOT NULL,
+    student_email VARCHAR(100) NOT NULL,
+    image_data LONGBLOB NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 
 
 

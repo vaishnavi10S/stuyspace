@@ -166,14 +166,28 @@ body {
   width: fit-content;
 }
 
-canvas {
-  border: 1px solid #ccc;
+#canvasContainer {
+  position: relative;
+  display: inline-block;
   margin-top: 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+canvas {
+  display: block;
+  touch-action: none;
 }
 
 #drawCanvas {
-  touch-action: none; /* CRITICAL for touch drawing */
   background-color: #ede7e7;
+}
+
+#highlightCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: highlighter;
 }
 
 .toolbar button {
