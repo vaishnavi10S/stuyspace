@@ -123,6 +123,28 @@ document.addEventListener("DOMContentLoaded", () => {
   // highlight strokes storage to avoid opacity stacking when drawing
   let highlightPaths = []; // array of strokes; each stroke is array of {x,y}
   let currentHighlightPath = null;
+  let lastEraserX = null;
+  let lastEraserY = null;
+
+  // Helper function to calculate distance from point to line segment
+  function distanceToLineSegment(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lengthSquared = dx * dx + dy * dy;
+    
+    if (lengthSquared === 0) {
+      // Line segment is a point
+      return Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
+    }
+    
+    let t = ((px - x1) * dx + (py - y1) * dy) / lengthSquared;
+    t = Math.max(0, Math.min(1, t));
+    
+    const closestX = x1 + t * dx;
+    const closestY = y1 + t * dy;
+    
+    return Math.sqrt((px - closestX) ** 2 + (py - closestY) ** 2);
+  }
 
   function saveState() {
     // Save all three canvases
@@ -186,6 +208,14 @@ function startDraw(e) {
     const currentCtx = tool === "eraser" ? ctx : ctx;
     currentCtx.beginPath();
     currentCtx.moveTo(e.offsetX, e.offsetY);
+    
+    // For eraser, track starting position and initialize highlight canvas path
+    if (tool === "eraser") {
+      lastEraserX = e.offsetX;
+      lastEraserY = e.offsetY;
+      highlightCtx.beginPath();
+      highlightCtx.moveTo(e.offsetX, e.offsetY);
+    }
   }
 }
 
@@ -207,8 +237,12 @@ function draw(e) {
 
   if (tool === "eraser") {
     currentCtx.globalCompositeOperation = "destination-out";
+    currentCtx.lineCap = "round";
+    currentCtx.lineJoin = "round";
+    currentCtx.lineTo(e.offsetX, e.offsetY);
+    currentCtx.stroke();
     
-    // Also erase from highlight canvas and remove highlight paths
+    // Also visually erase from highlight canvas
     highlightCtx.globalCompositeOperation = "destination-out";
     highlightCtx.strokeStyle = "rgba(0,0,0,1)";
     highlightCtx.lineWidth = lineWidth;
@@ -219,27 +253,31 @@ function draw(e) {
     
     // Remove highlight points that intersect with eraser stroke
     const eraserRadius = lineWidth / 2;
-    highlightPaths = highlightPaths.map(pathObj => {
-      const remaining = pathObj.points.filter(point => {
-        const dx = point.x - e.offsetX;
-        const dy = point.y - e.offsetY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance > eraserRadius;
-      });
-      return { points: remaining, color: pathObj.color };
-    }).filter(p => p.points.length > 0);
-
-    redrawHighlights();
+    if (lastEraserX !== null && lastEraserY !== null) {
+      highlightPaths = highlightPaths.map(pathObj => {
+        const remaining = pathObj.points.filter(point => {
+          const distance = distanceToLineSegment(
+            point.x, point.y,
+            lastEraserX, lastEraserY,
+            e.offsetX, e.offsetY
+          );
+          return distance > eraserRadius;
+        });
+        return { points: remaining, color: pathObj.color };
+      }).filter(p => p.points.length > 0);
+    }
+    
+    // Update last eraser position
+    lastEraserX = e.offsetX;
+    lastEraserY = e.offsetY;
   } else {
     currentCtx.globalCompositeOperation = "source-over";
     currentCtx.globalAlpha = 1;
+    currentCtx.lineCap = "round";
+    currentCtx.lineJoin = "round";
+    currentCtx.lineTo(e.offsetX, e.offsetY);
+    currentCtx.stroke();
   }
-
-  currentCtx.lineCap = "round";
-  currentCtx.lineJoin = "round";
-
-  currentCtx.lineTo(e.offsetX, e.offsetY);
-  currentCtx.stroke();
 }
 
 function stopDraw() {
@@ -248,6 +286,10 @@ function stopDraw() {
     currentHighlightPath = null;
   } else {
     ctx.beginPath(); // reset path ONCE at the end for pen/eraser
+    if (tool === "eraser") {
+      lastEraserX = null;
+      lastEraserY = null;
+    }
   }
 }
 
