@@ -57,8 +57,7 @@
 <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" 
 data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span> 
-</button> 
-</div> </div> </header>
+</button>
     <main>
      <section class="py-5 text-center container"> 
 
@@ -66,8 +65,14 @@ data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false
         <!-- Toolbar -->
 <div class="toolbar-wrapper">
   <div class="toolbar">
-    <button id="penBtn">✏️</button>
-    <button id="highlightBtn">🖍️</button>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <button id="penBtn">✏️</button>
+      <div id="penColorIndicator" style="width: 16px; height: 16px; border-radius: 4px; background: #000; border: 2px solid white; box-shadow: 0 0 3px rgba(0,0,0,0.3);"></div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <button id="highlightBtn">🖍️</button>
+      <div id="highlightColorIndicator" style="width: 16px; height: 16px; border-radius: 4px; background: #FFEB3B; border: 2px solid white; box-shadow: 0 0 3px rgba(0,0,0,0.3);"></div>
+    </div>
     <button id="textBtn">📝</button>
     <button id="clearBtn">🗑️</button>
     <button id="eraserBtn">🧽</button>
@@ -78,7 +83,7 @@ data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false
   </div>
 
   <!-- palette BELOW toolbar -->
-<div id="colorPalette" class="color-palette">
+  <div id="colorPalette" class="palette">
   <div class="color" data-color="#000000" style="background:#000000"></div> <!-- black -->
   <div class="color" data-color="#F44336" style="background:#fa5148"></div> <!-- red -->
   <div class="color" data-color="#FFEB3B" style="background:#f1e364"></div> <!-- yellow -->
@@ -93,9 +98,9 @@ data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false
 <div id="canvasContainer">
   <canvas id="drawCanvas"></canvas>
   <canvas id="highlightCanvas"></canvas>
+  <canvas id="textCanvas"></canvas>
   <canvas id="inputCanvas"></canvas>
 </div>
-
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>

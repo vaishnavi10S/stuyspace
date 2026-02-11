@@ -29,9 +29,7 @@ body {
   width: 100%;
   background: linear-gradient(135deg,#f8dbf4, #97c1ef,#f8dbf4 );
   padding: 14px 24px;
-}
-
-/* NAV LINKS */
+  }
 .nav-link {
   color: #1d1d1f;
   font-size: 0.9rem;
@@ -62,8 +60,6 @@ body {
   transform: scale(1.05);
   transition: 0.2s ease;
 }
-
-
 
 /* =========================
    GENERATED NOTE THUMBNAIL
@@ -172,6 +168,8 @@ body {
   margin-top: 20px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  background: transparent;
+  z-index: 50;
 }
 
 canvas {
@@ -195,13 +193,21 @@ canvas {
   pointer-events: none; /* allow inputCanvas to receive events */
 }
 
+#textCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  pointer-events: none; /* allow inputCanvas to receive events */
+}
+
 #inputCanvas {
   position: absolute;
   top: 0;
   left: 0;
   cursor: crosshair;
   background: transparent;
-  z-index: 100;
+  z-index: 10;
 }
 
 .toolbar button {
@@ -237,6 +243,7 @@ canvas {
 .toolbar-wrapper {
   position: relative;
   display: inline-block;
+  z-index: 200; /* keep toolbar and palette above canvases */
 }
 
 /* palette dropdown */
@@ -286,8 +293,3 @@ canvas {
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
-
-
-
-
-

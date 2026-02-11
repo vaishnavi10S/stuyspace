@@ -11,10 +11,10 @@ const db = mysql.createConnection({
 // connect once when app starts
 db.connect((err) => {
   if (err) {
-    console.error("❌ Database connection failed:", err);
+    console.error("Database connection failed:", err);
     return;
   }
-  console.log("✅ Connected to StudySpace Database");
+  console.log(" Connected to StudySpace Database");
 });
 
 module.exports = db;

@@ -58,11 +58,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("canvasContainer");
   const canvas = document.getElementById("drawCanvas");
   const highlightCanvas = document.getElementById("highlightCanvas");
+  const textCanvas = document.getElementById("textCanvas");
   const inputCanvas = document.getElementById("inputCanvas");
-  if (!canvas || !highlightCanvas || !inputCanvas) return;
+  if (!canvas || !highlightCanvas || !textCanvas || !inputCanvas) return;
 
   const ctx = canvas.getContext("2d");
   const highlightCtx = highlightCanvas.getContext("2d");
+  const textCtx = textCanvas.getContext("2d");
   const inputCtx = inputCanvas.getContext("2d");
   
   // Setup input canvas (transparent, for event capture only)
@@ -76,6 +78,14 @@ document.addEventListener("DOMContentLoaded", () => {
   canvas.height = inputCanvas.height;
   highlightCanvas.width = inputCanvas.width;
   highlightCanvas.height = inputCanvas.height;
+  textCanvas.width = inputCanvas.width;
+  textCanvas.height = inputCanvas.height;
+
+  // Ensure container matches the canvas size so absolute centering works
+  if (container) {
+    container.style.width = canvas.width + "px";
+    container.style.height = canvas.height + "px";
+  }
 
   // Get current space name and student email for canvas persistence
   const currentSpaceName = sessionStorage.getItem("currentSpace") || "default";
@@ -103,8 +113,8 @@ document.addEventListener("DOMContentLoaded", () => {
   loadCanvas();
 
   let drawing = false;
-  let color = "#000";
-  let lastColor = color;
+  let penColor = "#000"; // color for pen tool
+  let highlightColor = "#FFEB3B"; // default highlight color
   let lineWidth = 3;
   let tool = "pen";
 
@@ -115,14 +125,17 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentHighlightPath = null;
 
   function saveState() {
-    // Save both canvases as a composite
+    // Save all three canvases
     history.push({
       main: canvas.toDataURL(),
-      highlight: highlightCanvas.toDataURL()
+      highlight: highlightCanvas.toDataURL(),
+      text: textCanvas.toDataURL()
     });
     if (history.length > 30) history.shift();
     redoStack = [];
   }
+
+
 
   // Canvas save to database
   async function saveCanvasToDatabase() {
@@ -163,10 +176,10 @@ function startDraw(e) {
   saveState();
 
   if (tool === "highlight") {
-    // start a new highlight stroke (store points)
-    currentHighlightPath = [];
+    // start a new highlight stroke (store points with color)
+    currentHighlightPath = { points: [], color: highlightColor };
     highlightPaths.push(currentHighlightPath);
-    currentHighlightPath.push({ x: e.offsetX, y: e.offsetY });
+    currentHighlightPath.points.push({ x: e.offsetX, y: e.offsetY });
     // draw current highlights set once
     redrawHighlights();
   } else {
@@ -182,18 +195,41 @@ function draw(e) {
   if (tool === "highlight") {
     // add point to current highlight stroke and redraw all highlights once
     if (!currentHighlightPath) return;
-    currentHighlightPath.push({ x: e.offsetX, y: e.offsetY });
+    currentHighlightPath.points.push({ x: e.offsetX, y: e.offsetY });
     redrawHighlights();
     return;
   }
 
   // normal drawing/eraser behavior on main canvas
   const currentCtx = ctx;
-  currentCtx.strokeStyle = color;
+  currentCtx.strokeStyle = penColor;
   currentCtx.lineWidth = lineWidth;
 
   if (tool === "eraser") {
     currentCtx.globalCompositeOperation = "destination-out";
+    
+    // Also erase from highlight canvas and remove highlight paths
+    highlightCtx.globalCompositeOperation = "destination-out";
+    highlightCtx.strokeStyle = "rgba(0,0,0,1)";
+    highlightCtx.lineWidth = lineWidth;
+    highlightCtx.lineCap = "round";
+    highlightCtx.lineJoin = "round";
+    highlightCtx.lineTo(e.offsetX, e.offsetY);
+    highlightCtx.stroke();
+    
+    // Remove highlight points that intersect with eraser stroke
+    const eraserRadius = lineWidth / 2;
+    highlightPaths = highlightPaths.map(pathObj => {
+      const remaining = pathObj.points.filter(point => {
+        const dx = point.x - e.offsetX;
+        const dy = point.y - e.offsetY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance > eraserRadius;
+      });
+      return { points: remaining, color: pathObj.color };
+    }).filter(p => p.points.length > 0);
+
+    redrawHighlights();
   } else {
     currentCtx.globalCompositeOperation = "source-over";
     currentCtx.globalAlpha = 1;
@@ -205,7 +241,6 @@ function draw(e) {
   currentCtx.lineTo(e.offsetX, e.offsetY);
   currentCtx.stroke();
 }
-
 
 function stopDraw() {
   drawing = false;
@@ -223,17 +258,18 @@ function redrawHighlights() {
   highlightCtx.save();
   highlightCtx.globalAlpha = 0.25;
   highlightCtx.globalCompositeOperation = "source-over";
-  highlightCtx.strokeStyle = "#FFEB3B";
+  highlightCtx.strokeStyle = highlightColor; // use selected highlight color from palette
   highlightCtx.lineWidth = 18;
   highlightCtx.lineCap = "round";
   highlightCtx.lineJoin = "round";
 
-  for (const path of highlightPaths) {
-    if (!path || path.length === 0) continue;
+  for (const pathObj of highlightPaths) {
+    if (!pathObj || !pathObj.points || pathObj.points.length === 0) continue;
+    highlightCtx.strokeStyle = pathObj.color || highlightColor;
     highlightCtx.beginPath();
-    highlightCtx.moveTo(path[0].x, path[0].y);
-    for (let i = 1; i < path.length; i++) {
-      highlightCtx.lineTo(path[i].x, path[i].y);
+    highlightCtx.moveTo(pathObj.points[0].x, pathObj.points[0].y);
+    for (let i = 1; i < pathObj.points.length; i++) {
+      highlightCtx.lineTo(pathObj.points[i].x, pathObj.points[i].y);
     }
     highlightCtx.stroke();
   }
@@ -254,8 +290,6 @@ highlightCtx.lineCap = "round";
 highlightCtx.lineJoin = "round";
 
 
-  
-
   /* =========================
      TOOLBAR
   ========================== */
@@ -267,7 +301,6 @@ highlightCtx.lineJoin = "round";
   const undoBtn = document.getElementById("undoBtn");
   const redoBtn = document.getElementById("redoBtn");
   const palette = document.getElementById("colorPalette");
-
 
 
 //setActive tool
@@ -305,13 +338,6 @@ function setActiveTool(t) {
     lineWidth = 18;
     highlightCtx.globalAlpha = 0.25;
     highlightCtx.globalCompositeOperation = "source-over";
-    // preserve last non-highlight color and use yellow for highlight
-    lastColor = color;
-    color = "#FFEB3B";
-    inputCanvas.style.cursor = "crosshair";
-  } else {
-    // restore chosen color when leaving highlight
-    color = lastColor;
     inputCanvas.style.cursor = "crosshair";
   }
 
@@ -325,12 +351,6 @@ function setActiveTool(t) {
     textBtn.classList.add("active");
   }
 }
-
-
-
-
-
-
 
   // default tool
 //   setActiveTool("pen");
@@ -358,7 +378,8 @@ undoBtn.addEventListener("click", () => {
 
   const currentState = {
     main: canvas.toDataURL(),
-    highlight: highlightCanvas.toDataURL()
+    highlight: highlightCanvas.toDataURL(),
+    text: textCanvas.toDataURL()
   };
   redoStack.push(currentState);
 
@@ -366,27 +387,36 @@ undoBtn.addEventListener("click", () => {
   
   const mainImg = new Image();
   const highlightImg = new Image();
+  const textImg = new Image();
   let imagesLoaded = 0;
   
   mainImg.onload = () => {
     imagesLoaded++;
-    if (imagesLoaded === 2) applyState();
+    if (imagesLoaded === 3) applyState();
   };
   
   highlightImg.onload = () => {
     imagesLoaded++;
-    if (imagesLoaded === 2) applyState();
+    if (imagesLoaded === 3) applyState();
+  };
+  
+  textImg.onload = () => {
+    imagesLoaded++;
+    if (imagesLoaded === 3) applyState();
   };
   
   function applyState() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+    textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
     ctx.drawImage(mainImg, 0, 0);
     highlightCtx.drawImage(highlightImg, 0, 0);
+    textCtx.drawImage(textImg, 0, 0);
   }
   
   mainImg.src = previousState.main;
   highlightImg.src = previousState.highlight;
+  textImg.src = previousState.text;
 });
 
 //redo
@@ -395,34 +425,44 @@ redoBtn.addEventListener("click", () => {
 
   history.push({
     main: canvas.toDataURL(),
-    highlight: highlightCanvas.toDataURL()
+    highlight: highlightCanvas.toDataURL(),
+    text: textCanvas.toDataURL()
   });
 
   const nextState = redoStack.pop();
   
   const mainImg = new Image();
   const highlightImg = new Image();
+  const textImg = new Image();
   let imagesLoaded = 0;
   
   mainImg.onload = () => {
     imagesLoaded++;
-    if (imagesLoaded === 2) applyState();
+    if (imagesLoaded === 3) applyState();
   };
   
   highlightImg.onload = () => {
     imagesLoaded++;
-    if (imagesLoaded === 2) applyState();
+    if (imagesLoaded === 3) applyState();
+  };
+  
+  textImg.onload = () => {
+    imagesLoaded++;
+    if (imagesLoaded === 3) applyState();
   };
   
   function applyState() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+    textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
     ctx.drawImage(mainImg, 0, 0);
     highlightCtx.drawImage(highlightImg, 0, 0);
+    textCtx.drawImage(textImg, 0, 0);
   }
   
   mainImg.src = nextState.main;
   highlightImg.src = nextState.highlight;
+  textImg.src = nextState.text;
 });
 
 
@@ -436,13 +476,13 @@ inputCanvas.addEventListener("click", e => {
 
   saveState();
 
-  ctx.globalAlpha = 1;
-  ctx.globalCompositeOperation = "source-over";
-  ctx.fillStyle = color;
-  ctx.font = "16px Segoe UI";
+  textCtx.globalAlpha = 1;
+  textCtx.globalCompositeOperation = "source-over";
+  textCtx.fillStyle = penColor;
+  textCtx.font = "16px Segoe UI";
 
   // offsetX/offsetY are relative to inputCanvas (positioned above others)
-  ctx.fillText(text, e.offsetX, e.offsetY);
+  textCtx.fillText(text, e.offsetX, e.offsetY);
 });
 
 // Clear canvas button
@@ -450,6 +490,7 @@ const clearBtn = document.getElementById("clearBtn");
 clearBtn?.addEventListener("click", () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+  textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
   history = [];
   redoStack = [];
 });
@@ -459,7 +500,26 @@ clearBtn?.addEventListener("click", () => {
   document.querySelectorAll(".color").forEach(c => {
     c.addEventListener("click", e => {
       e.stopPropagation();
-      color = c.dataset.color;
+      const selected = c.dataset.color;
+      // apply color to the active tool only
+      if (tool === "highlight") {
+        highlightColor = selected;
+        // Update visual indicator
+        const indicator = document.getElementById("highlightColorIndicator");
+        if (indicator) indicator.style.background = selected;
+        // immediately update highlights drawing color
+        redrawHighlights();
+      } else if (tool === "text") {
+        // text uses pen color by default
+        penColor = selected;
+        const indicator = document.getElementById("penColorIndicator");
+        if (indicator) indicator.style.background = selected;
+      } else {
+        penColor = selected;
+        // Update visual indicator
+        const indicator = document.getElementById("penColorIndicator");
+        if (indicator) indicator.style.background = selected;
+      }
     });
   });
 
