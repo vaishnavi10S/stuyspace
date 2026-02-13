@@ -1,16 +1,16 @@
-import Highlighter from 'web-highlighter';
-(new Highlighter()).run();
-
-
-
-
-
+// Remove web-highlighter from login page - it's not needed here
 const form = document.querySelector("form");
 const emailInput = document.getElementById("floatingInput");
 const passwordInput = document.getElementById("floatingPassword");
 
-form.addEventListener("submit", function (e) {
+// Debug helper
+function log(msg, data) {
+  console.log(`[LOGIN] ${msg}`, data || "");
+}
+
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
+  log("Form submitted");
 
   let isValid = true;
 
@@ -30,9 +30,80 @@ form.addEventListener("submit", function (e) {
     clearError(passwordInput);
   }
 
-  if (isValid) {
-    alert("Login successful (demo)");
-    form.reset();
+  if (!isValid) {
+    log("Validation failed");
+    return;
+  }
+
+  log("Validation passed, attempting login");
+
+  const email = emailInput.value;
+  const password = passwordInput.value;
+
+  try {
+    // Try student login first
+    log("Trying student login...");
+    let response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    log("Student response status:", response.status);
+    let data = await response.json();
+    log("Student response data:", data);
+
+    // If student login failed, try admin login
+    if (!data.success) {
+      log("Student login failed, trying admin...");
+      response = await fetch("/api/auth/admin-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      log("Admin response status:", response.status);
+      data = await response.json();
+      log("Admin response data:", data);
+    }
+
+    // Handle success
+    if (data.success) {
+      log("Login successful! User role:", data.userRole);
+      
+      // Store in localStorage
+      localStorage.setItem("userEmail", data.email);
+      localStorage.setItem("studentId", data.studentId || data.adminId || "");
+      localStorage.setItem("userRole", data.userRole);
+
+      alert("Login successful!");
+      
+      // Clear form
+      form.reset();
+      
+      // Redirect based on role
+      setTimeout(() => {
+        if (data.userRole === "admin") {
+          log("Redirecting to admin dashboard");
+          window.location.href = "/dashboard.html";
+        } else {
+          log("Redirecting to student dashboard");
+          window.location.href = "/dashbStd.html";
+        }
+      }, 500);
+    } else {
+      log("Login failed:", data.error);
+      clearError(passwordInput);
+      showError(emailInput, data.error || "Invalid credentials");
+    }
+  } catch (err) {
+    log("ERROR:", err.message);
+    clearError(passwordInput);
+    showError(emailInput, "Network error: " + err.message);
   }
 });
 
@@ -43,18 +114,18 @@ function showError(input, message) {
   if (!feedback) {
     feedback = document.createElement("div");
     feedback.className = "invalid-feedback";
-    feedback.innerText = message;
+    feedback.style.display = "block";
     input.parentElement.appendChild(feedback);
   }
 
-  feedback.innerText = message;
+  feedback.textContent = message;
+  feedback.style.display = "block";
 }
 
 function clearError(input) {
   input.classList.remove("is-invalid");
   const feedback = input.parentElement.querySelector(".invalid-feedback");
-  if (feedback) feedback.remove();
+  if (feedback) {
+    feedback.style.display = "none";
+  }
 }
-
-// avatar
-localStorage.setItem("userName", fullNameInput.value.trim());

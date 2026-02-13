@@ -1,8 +1,16 @@
 const addBtn = document.getElementById("addNoteBtn");
 const cardRow = document.querySelector(".album .row");
 
+// Check if user is logged in and is a student
+const userRole = localStorage.getItem("userRole");
+const userEmail = localStorage.getItem("userEmail");
 
-// toggle
+if (!userEmail || userRole !== "learner") {
+  alert("Unauthorized access. Please login as a student.");
+  window.location.href = "/login.html";
+}
+
+
 const profileToggle = document.getElementById("profileToggle");
 const profileDropdown = document.getElementById("profileDropdown");
 const logoutBtn = document.getElementById("logoutBtn");

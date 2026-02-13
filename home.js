@@ -1,4 +1,29 @@
+// Check if user is logged in
+const userEmail = localStorage.getItem("userEmail");
+const userRole = localStorage.getItem("userRole");
+
+if (!userEmail) {
+  alert("Please login first");
+  window.location.href = "login.html";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  
+  // Setup logout functionality
+  const logoutBtn = document.getElementById("logoutBtn");
+  const dashboardLink = document.getElementById("dashboardLink");
+  
+  if (dashboardLink) {
+    dashboardLink.href = userRole === "admin" ? "dashboard.html" : "dashbStd.html";
+  }
+  
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.clear();
+      window.location.href = "login.html";
+    });
+  }
 
   /*CREATE SPACE MODAL */
 

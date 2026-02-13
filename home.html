@@ -126,11 +126,19 @@ data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 
 <script>
+// Check if user is logged in
+const userEmail = localStorage.getItem("userEmail");
+const userRole = localStorage.getItem("userRole");
+
+if (!userEmail) {
+  alert("Please login first");
+  window.location.href = "login.html";
+}
+
 // Set dashboard link based on user role
 document.addEventListener("DOMContentLoaded", () => {
   const dashboardLink = document.getElementById("dashboardLink");
   const logoutBtn = document.getElementById("logoutBtn");
-  const userRole = localStorage.getItem("userRole") || "learner";
   
   dashboardLink.href = userRole === "admin" ? "dashboard.html" : "dashbStd.html";
   

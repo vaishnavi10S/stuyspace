@@ -1,6 +1,15 @@
 const addBtn = document.getElementById("addNoteBtn");
 const cardRow = document.querySelector(".album .row");
 
+// Check if user is logged in and is an admin
+const userRole = localStorage.getItem("userRole");
+const userEmail = localStorage.getItem("userEmail");
+
+if (!userEmail || userRole !== "admin") {
+  alert("Unauthorized access. Please login as admin.");
+  window.location.href = "/login.html";
+}
+
 // Hidden file input
 const fileInput = document.createElement("input");
 fileInput.type = "file";
