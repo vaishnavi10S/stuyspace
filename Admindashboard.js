@@ -100,3 +100,60 @@ logoutBtn.addEventListener("click", () => {
   localStorage.clear(); // or remove only auth keys
   window.location.href = "login.html";
 });
+
+
+
+
+
+
+
+//claude code for resource management
+// Add this function to fetch resources from database
+async function loadResources() {
+    try {
+        const response = await fetch('/api/resources'); // Create this endpoint
+        const resources = await response.json();
+        displayResources(resources);
+    } catch (error) {
+        console.error('Error loading resources:', error);
+    }
+}
+
+// Display resources on the page
+function displayResources(resources) {
+    const container = document.querySelector('.resources-container'); // Add this class to your container
+    
+    resources.forEach(resource => {
+        const card = createResourceCard(resource);
+        container.appendChild(card);
+    });
+}
+
+// Create individual resource card
+function createResourceCard(resource) {
+    const card = document.createElement('div');
+    card.className = 'resource-card';
+    card.innerHTML = `
+        <div class="card-header">
+            <img src="${resource.thumbnail || 'default-thumbnail.png'}" alt="${resource.title}">
+            <h3>${resource.title}</h3>
+        </div>
+        <div class="card-body">
+            <p>${resource.description}</p>
+        </div>
+        <div class="card-footer">
+            <button onclick="viewResource(${resource.id})">View</button>
+            <button onclick="editResource(${resource.id})">Edit</button>
+            <span class="status">${resource.status || 'Uploaded'}</span>
+        </div>
+    `;
+    return card;
+}
+
+// View resource - open PDF in canvas/viewer
+function viewResource(resourceId) {
+    window.location.href = `/canvas.html?resource=${resourceId}`;
+}
+
+// Call on page load
+document.addEventListener('DOMContentLoaded', loadResources);

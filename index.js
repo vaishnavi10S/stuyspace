@@ -104,7 +104,12 @@ if (localStorage.getItem("userRole") === "admin") {
 }
 
 // Role selection function
+// Role selection function
 function selectRole(role) {
   localStorage.setItem("userRole", role);
-  window.location.href = "./signup.html";
+  if (role === 'admin') {
+    window.location.href = "./login.html";
+  } else {
+    window.location.href = "./signup.html";
+  }
 }

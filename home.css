@@ -1,8 +1,12 @@
 
 body {
+/* 
+.bitcount-prop-single-<uniquifier>  */
+  font-family: "Bitcount Prop Single", system-ui, -apple-system, "patrick-hand", "caveat", "libre-baskerville", sans-serif;
+  font-optical-sizing: auto;
+
   min-height: 100vh;
   background-color:#fafbfb;
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   color: var(--text-dark);
      background: linear-gradient(270deg,  #F4F2E0, #f8dbf4, #97c1ef, #E1EDF4);
   background-size: 180% 180%;

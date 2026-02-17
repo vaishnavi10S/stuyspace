@@ -1,5 +1,5 @@
-import Highlighter from 'web-highlighter';
-(new Highlighter()).run();
+// Highlighter not needed for signup
+
 
 const form = document.querySelector("form");
 const emailInput = document.getElementById("floatingInput");
